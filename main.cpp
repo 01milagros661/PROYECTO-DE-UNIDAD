@@ -1,177 +1,88 @@
-/*
- * GLUT Shapes Demo
- *
- * Written by Nigel Stewart November 2003
- *
- * This program is test harness for the sphere, cone
- * and torus shapes in GLUT.
- *
- * Spinning wireframe and smooth shaded shapes are
- * displayed until the ESC or q key is pressed.  The
- * number of geometry stacks and slices can be adjusted
- * using the + and - keys.
- */
+#include <windows.h>
+#include <GL/freeglut.h>
+#include <iostream>
 
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
+using namespace std;
 
-#include <stdlib.h>
+const int ANCHO = 800;
+const int ALTO = 600;
 
-static int slices = 16;
-static int stacks = 16;
+bool mostrarCuadricula = true;
+bool mostrarEjes = true;
 
-/* GLUT callback Handlers */
-
-static void resize(int width, int height)
-{
-    const float ar = (float) width / (float) height;
-
-    glViewport(0, 0, width, height);
+void inicializar() {
+    glClearColor(1,1,1,1);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-ar, ar, -1.0, 1.0, 2.0, 100.0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity() ;
+    gluOrtho2D(-ANCHO/2, ANCHO/2, -ALTO/2, ALTO/2);
+    glPointSize(1);
 }
 
-static void display(void)
-{
-    const double t = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
-    const double a = t*90.0;
+void dibujarPixel(int x, int y) {
+    glBegin(GL_POINTS);
+    glVertex2i(x,y);
+    glEnd();
+}
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glColor3d(1,0,0);
+void dibujarCuadricula() {
+    if (!mostrarCuadricula) return;
+    glColor3f(0.8, 0.8, 0.8);
+    for(int x=-ANCHO/2; x<=ANCHO/2; x+=20)
+        for(int y=-ALTO/2; y<=ALTO/2; y++)
+            dibujarPixel(x,y);
+    for(int y=-ALTO/2; y<=ALTO/2; y+=20)
+        for(int x=-ANCHO/2; x<=ANCHO/2; x++)
+            dibujarPixel(x,y);
+}
 
-    glPushMatrix();
-        glTranslated(-2.4,1.2,-6);
-        glRotated(60,1,0,0);
-        glRotated(a,0,0,1);
-        glutSolidSphere(1,slices,stacks);
-    glPopMatrix();
+void dibujarEjes() {
+    if (!mostrarEjes) return;
+    glColor3f(0,0,0);
+    for(int x=-ANCHO/2; x<=ANCHO/2; x++)
+        dibujarPixel(x,0);
+    for(int y=-ALTO/2; y<=ALTO/2; y++)
+        dibujarPixel(0,y);
+}
 
-    glPushMatrix();
-        glTranslated(0,1.2,-6);
-        glRotated(60,1,0,0);
-        glRotated(a,0,0,1);
-        glutSolidCone(1,1,slices,stacks);
-    glPopMatrix();
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    dibujarCuadricula();
+    dibujarEjes();
 
-    glPushMatrix();
-        glTranslated(2.4,1.2,-6);
-        glRotated(60,1,0,0);
-        glRotated(a,0,0,1);
-        glutSolidTorus(0.2,0.8,slices,stacks);
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslated(-2.4,-1.2,-6);
-        glRotated(60,1,0,0);
-        glRotated(a,0,0,1);
-        glutWireSphere(1,slices,stacks);
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslated(0,-1.2,-6);
-        glRotated(60,1,0,0);
-        glRotated(a,0,0,1);
-        glutWireCone(1,1,slices,stacks);
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslated(2.4,-1.2,-6);
-        glRotated(60,1,0,0);
-        glRotated(a,0,0,1);
-        glutWireTorus(0.2,0.8,slices,stacks);
-    glPopMatrix();
-
+    glColor3f(1,0,0);
+    dibujarPixel(0,0);
     glutSwapBuffers();
 }
 
-
-static void key(unsigned char key, int x, int y)
-{
-    switch (key)
-    {
-        case 27 :
-        case 'q':
+void teclado(unsigned char key, int x, int y) {
+    switch(key) {
+        case 'g': case 'G':
+            mostrarCuadricula = !mostrarCuadricula;
+            cout << "Cuadricula " << (mostrarCuadricula ? "ON" : "OFF") << endl;
+            break;
+        case 'e': case 'E':
+            mostrarEjes = !mostrarEjes;
+            cout << "Ejes " << (mostrarEjes ? "ON" : "OFF") << endl;
+            break;
+        case 27:
             exit(0);
             break;
-
-        case '+':
-            slices++;
-            stacks++;
-            break;
-
-        case '-':
-            if (slices>3 && stacks>3)
-            {
-                slices--;
-                stacks--;
-            }
-            break;
     }
-
     glutPostRedisplay();
 }
 
-static void idle(void)
-{
-    glutPostRedisplay();
-}
-
-const GLfloat light_ambient[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
-const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
-const GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-const GLfloat light_position[] = { 2.0f, 5.0f, 5.0f, 0.0f };
-
-const GLfloat mat_ambient[]    = { 0.7f, 0.7f, 0.7f, 1.0f };
-const GLfloat mat_diffuse[]    = { 0.8f, 0.8f, 0.8f, 1.0f };
-const GLfloat mat_specular[]   = { 1.0f, 1.0f, 1.0f, 1.0f };
-const GLfloat high_shininess[] = { 100.0f };
-
-/* Program entry point */
-
-int main(int argc, char *argv[])
-{
+int main(int argc, char** argv) {
     glutInit(&argc, argv);
-    glutInitWindowSize(640,480);
-    glutInitWindowPosition(10,10);
-    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(ANCHO, ALTO);
+    glutCreateWindow("Unidad 01 - Parte 1");
 
-    glutCreateWindow("GLUT Shapes");
-
-    glutReshapeFunc(resize);
+    inicializar();
     glutDisplayFunc(display);
-    glutKeyboardFunc(key);
-    glutIdleFunc(idle);
+    glutKeyboardFunc(teclado);
 
-    glClearColor(1,1,1,1);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glEnable(GL_LIGHT0);
-    glEnable(GL_NORMALIZE);
-    glEnable(GL_COLOR_MATERIAL);
-    glEnable(GL_LIGHTING);
-
-    glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-    glMaterialfv(GL_FRONT, GL_AMBIENT,   mat_ambient);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE,   mat_diffuse);
-    glMaterialfv(GL_FRONT, GL_SPECULAR,  mat_specular);
-    glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
+    cout << "Teclas: G toggle cuadrícula, E toggle ejes, ESC salir\n";
 
     glutMainLoop();
-
-    return EXIT_SUCCESS;
+    return 0;
 }
